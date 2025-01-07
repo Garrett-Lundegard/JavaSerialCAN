@@ -15,7 +15,7 @@ public class SerialApp {
         }
 
         // Step 3: Send command to query Input Power register
-        String command = "can send 8020 171019131102 \n"; // Replace with the appropriate command
+        String command = "conf enumerate \n";//"can send 8020 171019131102 \n"; // Replace with the appropriate command
         String response = serial.sendCommand(command);
 
         // Step 4: Print the response
@@ -24,7 +24,7 @@ public class SerialApp {
         } else {
             System.out.println("Failed to get a response from the device.");
         }
-        
+
         // Step 5: Close the port
         serial.closePort();
     }

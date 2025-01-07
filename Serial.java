@@ -1,7 +1,6 @@
-// File: Serial.java
+// Refactored Serial.java
 
 import java.io.IOException;
-
 import com.fazecast.jSerialComm.SerialPort;
 
 /**
@@ -106,10 +105,10 @@ public class Serial {
     }
 
     /**
-     * Sends a command and reads the response from the device.
-     * 
+     * Sends a command and reads the complete response from the device.
+     *
      * @param command The command to send (e.g., "can send 8020 171019131102 \n").
-     * @return The response from the device as a String, or null if an error occurs.
+     * @return The full response from the device as a String, or null if an error occurs.
      */
     public String sendCommand(String command) {
         if (selectedPort == null || !selectedPort.isOpen()) {
@@ -124,15 +123,28 @@ public class Serial {
             System.out.println("Command sent: " + command.trim());
 
             // Read the response from the serial port
-            byte[] buffer = new byte[1024]; // Adjust buffer size as needed
-            int bytesRead = selectedPort.getInputStream().read(buffer);
+            StringBuilder response = new StringBuilder();
+            byte[] buffer = new byte[1024]; // Buffer to store read data
+            int bytesRead;
 
-            if (bytesRead > 0) {
-                return new String(buffer, 0, bytesRead).trim();
+            while ((bytesRead = selectedPort.getInputStream().read(buffer)) > 0) {
+                response.append(new String(buffer, 0, bytesRead).trim());
+
+                // If the response ends with a newline, assume it's complete
+                if (response.toString().endsWith("\n")) {
+                    break;
+                }
+            }
+
+            // Return the complete response
+            if (response.length() > 0) {
+                System.out.println("Device response: " + response.toString());
+                return response.toString();
             } else {
                 System.out.println("No response received.");
                 return null;
             }
+
         } catch (IOException e) {
             System.out.println("Error communicating with device: " + e.getMessage());
             return null;
