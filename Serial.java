@@ -128,10 +128,10 @@ public class Serial {
             int bytesRead;
 
             while ((bytesRead = selectedPort.getInputStream().read(buffer)) > 0) {
-                response.append(new String(buffer, 0, bytesRead).trim());
+                response.append(new String(buffer, 0, bytesRead)); // Remove .trim() to avoid partial trimming
 
                 // If the response ends with a newline, assume it's complete
-                if (response.toString().endsWith("\n")) {
+                if (response.toString().contains("\n")) {
                     break;
                 }
             }
@@ -139,7 +139,7 @@ public class Serial {
             // Return the complete response
             if (response.length() > 0) {
                 System.out.println("Device response: " + response.toString());
-                return response.toString();
+                return response.toString().trim(); // Final trimming here
             } else {
                 System.out.println("No response received.");
                 return null;

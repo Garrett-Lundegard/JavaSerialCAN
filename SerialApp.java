@@ -15,15 +15,17 @@ public class SerialApp {
         }
 
         // Step 3: Send command to query Input Power register
-        String command = "conf enumerate \n";//"can send 8020 171019131102 \n"; // Replace with the appropriate command
+        //String command = "can on \n"; //"conf enumerate \n"; // Replace with the appropriate command
+        String command = "can send 8020 1c0110 \n"; 
+        //response = serial.sendCommand(command);
         String response = serial.sendCommand(command);
-
-        // Step 4: Print the response
-        if (response != null) {
-            System.out.println("Device response: " + response);
-        } else {
-            System.out.println("Failed to get a response from the device.");
-        }
+        
+        // // Step 4: Print the response
+        // if (response != null) {
+        //     System.out.println("Device response: " + response);
+        // } else {
+        //     System.out.println("Failed to get a response from the device.");
+        // }
 
         // Step 5: Close the port
         serial.closePort();
