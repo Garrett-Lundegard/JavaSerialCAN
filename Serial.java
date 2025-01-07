@@ -105,9 +105,9 @@ public class Serial {
     }
 
     /**
-     * Sends a command and reads the complete response from the device.
+     * Sends a command and reads the response from the device.
      *
-     * @param command The command to send (e.g., "can send 8020 171019131102 \n").
+     * @param command The command to send (e.g., "can send 8020 1c0110 \n").
      * @return The full response from the device as a String, or null if an error occurs.
      */
     public String sendCommand(String command) {
@@ -124,28 +124,27 @@ public class Serial {
 
             // Read the response from the serial port
             StringBuilder response = new StringBuilder();
-            byte[] buffer = new byte[1024]; // Buffer to store read data
+            byte[] buffer = new byte[1024];
             int bytesRead;
 
-            while ((bytesRead = selectedPort.getInputStream().read(buffer)) > 0) {
-                response.append(new String(buffer, 0, bytesRead)); // Remove .trim() to avoid partial trimming
-
-                // If the response ends with a newline, assume it's complete
-                if (response.toString().contains("\n")) {
-                    break;
+            System.out.println("Waiting for response...");
+            while ((selectedPort.bytesAvailable()) > 0) {
+                bytesRead = selectedPort.getInputStream().read(buffer);
+                
+                String chunk = new String(buffer, 0, bytesRead);
+                response.append(chunk);
+                
+                // Print and clear buffer if newline detected
+                if (chunk.contains("\n")) {
+                    System.out.print("Device output: " + response.toString());
+                    response.setLength(0); // Clear buffer
                 }
+            
+            
             }
-
-            // Return the complete response
-            if (response.length() > 0) {
-                System.out.println("Device response: " + response.toString());
-                return response.toString().trim(); // Final trimming here
-            } else {
-                System.out.println("No response received.");
-                return null;
-            }
-
-        } catch (IOException e) {
+            return response.toString();
+        }
+        catch (IOException e) {
             System.out.println("Error communicating with device: " + e.getMessage());
             return null;
         }
