@@ -36,21 +36,18 @@ public class Serial {
         SerialPort[] ports = SerialPort.getCommPorts();
 
         try {
+            // Check if identifier is numeric (for ID selection)
             int portIndex = Integer.parseInt(identifier);
             if (portIndex >= 0 && portIndex < ports.length) {
                 selectedPort = ports[portIndex];
-                System.out.println("Selected port by ID: " + selectedPort.getSystemPortName());
-                return true;
             }
         } catch (NumberFormatException e) {
-            // Ignore, it means the identifier is not numeric
-        }
-
-        for (SerialPort port : ports) {
-            if (port.getSystemPortName().equalsIgnoreCase(identifier)) {
-                selectedPort = port;
-                System.out.println("Selected port by name: " + selectedPort.getSystemPortName());
-                return true;
+            // If identifier is not numeric, match by name
+            for (SerialPort port : ports) {
+                if (port.getSystemPortName().equalsIgnoreCase(identifier)) {
+                    selectedPort = port;
+                    break;
+                }
             }
         }
 
@@ -58,7 +55,7 @@ public class Serial {
             System.out.println("Port not found: " + identifier);
             return false;
         }
-        
+
         // Open the selected port
         if (!openPort()) {
             System.out.println("Failed to open port: " + selectedPort.getSystemPortName());
