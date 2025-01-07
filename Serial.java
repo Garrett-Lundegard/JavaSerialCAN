@@ -1,5 +1,7 @@
 // File: Serial.java
 
+import java.io.IOException;
+
 import com.fazecast.jSerialComm.SerialPort;
 
 /**
@@ -52,8 +54,19 @@ public class Serial {
             }
         }
 
-        System.out.println("Port not found: " + identifier);
-        return false;
+        if (selectedPort == null) {
+            System.out.println("Port not found: " + identifier);
+            return false;
+        }
+        
+        // Open the selected port
+        if (!openPort()) {
+            System.out.println("Failed to open port: " + selectedPort.getSystemPortName());
+            return false;
+        }
+
+        System.out.println("Port selected and opened: " + selectedPort.getSystemPortName());
+        return true;
     }
 
     /**
@@ -63,5 +76,69 @@ public class Serial {
      */
     public SerialPort getSelectedPort() {
         return selectedPort;
+    }
+
+    /**
+     * Opens the currently selected serial port.
+     * 
+     * @return True if the port was successfully opened, otherwise false.
+     */
+    private boolean openPort() {
+        if (selectedPort == null) {
+            System.out.println("No port selected to open.");
+            return false;
+        }
+
+        if (selectedPort.openPort()) {
+            selectedPort.setComPortTimeouts(SerialPort.TIMEOUT_READ_SEMI_BLOCKING, 1000, 1000);
+            System.out.println("Port opened: " + selectedPort.getSystemPortName());
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    /**
+     * Closes the currently selected serial port.
+     */
+    public void closePort() {
+        if (selectedPort != null && selectedPort.isOpen()) {
+            selectedPort.closePort();
+            System.out.println("Port closed: " + selectedPort.getSystemPortName());
+        }
+    }
+
+    /**
+     * Sends a command and reads the response from the device.
+     * 
+     * @param command The command to send (e.g., "can send 8020 171019131102 \n").
+     * @return The response from the device as a String, or null if an error occurs.
+     */
+    public String sendCommand(String command) {
+        if (selectedPort == null || !selectedPort.isOpen()) {
+            System.out.println("No port selected or port is not open.");
+            return null;
+        }
+
+        try {
+            // Write the command to the serial port
+            selectedPort.getOutputStream().write(command.getBytes());
+            selectedPort.getOutputStream().flush();
+            System.out.println("Command sent: " + command.trim());
+
+            // Read the response from the serial port
+            byte[] buffer = new byte[1024]; // Adjust buffer size as needed
+            int bytesRead = selectedPort.getInputStream().read(buffer);
+
+            if (bytesRead > 0) {
+                return new String(buffer, 0, bytesRead).trim();
+            } else {
+                System.out.println("No response received.");
+                return null;
+            }
+        } catch (IOException e) {
+            System.out.println("Error communicating with device: " + e.getMessage());
+            return null;
+        }
     }
 }
