@@ -1,18 +1,42 @@
-// Refactored Serial.java
-
 import java.io.IOException;
-import com.fazecast.jSerialComm.SerialPort;
 
-/**
- * Serial class for managing serial port operations.
- */
+import com.fazecast.jSerialComm.*;
+
 public class Serial {
 
-    private SerialPort selectedPort; // Stores the selected port
+    private SerialPort selectedPort;
 
-    /**
-     * Scans and lists all available serial ports.
-     */
+    // Event-based reading
+    public void enableEventBasedReading() {
+        if (selectedPort == null || !selectedPort.isOpen()) {
+            System.out.println("No port selected or port is not open.");
+            return;
+        }
+
+        // Add data listener for event-based reading
+        selectedPort.addDataListener(new SerialPortDataListener() {
+            @Override
+            public int getListeningEvents() {
+                return SerialPort.LISTENING_EVENT_DATA_AVAILABLE;
+            }
+
+            @Override
+            public void serialEvent(SerialPortEvent event) {
+                if (event.getEventType() == SerialPort.LISTENING_EVENT_DATA_AVAILABLE) {
+                    byte[] buffer = new byte[selectedPort.bytesAvailable()];
+                    int numBytes = selectedPort.readBytes(buffer, buffer.length);
+
+                    if (numBytes > 0) {
+                        String receivedData = new String(buffer, 0, numBytes);
+                        System.out.println("Received: " + receivedData);
+                    }
+                }
+            }
+        });
+
+        System.out.println("Event-based reading enabled.");
+    }
+
     public void scanPorts() {
         SerialPort[] ports = SerialPort.getCommPorts();
         if (ports.length == 0) {
@@ -25,23 +49,15 @@ public class Serial {
         }
     }
 
-    /**
-     * Selects a serial port by its name or ID.
-     * 
-     * @param identifier The port name (e.g., "COM10") or ID (index from the list).
-     * @return True if the port is successfully selected, otherwise false.
-     */
     public boolean selectPort(String identifier) {
         SerialPort[] ports = SerialPort.getCommPorts();
 
         try {
-            // Check if identifier is numeric (for ID selection)
             int portIndex = Integer.parseInt(identifier);
             if (portIndex >= 0 && portIndex < ports.length) {
                 selectedPort = ports[portIndex];
             }
         } catch (NumberFormatException e) {
-            // If identifier is not numeric, match by name
             for (SerialPort port : ports) {
                 if (port.getSystemPortName().equalsIgnoreCase(identifier)) {
                     selectedPort = port;
@@ -55,7 +71,6 @@ public class Serial {
             return false;
         }
 
-        // Open the selected port
         if (!openPort()) {
             System.out.println("Failed to open port: " + selectedPort.getSystemPortName());
             return false;
@@ -65,20 +80,6 @@ public class Serial {
         return true;
     }
 
-    /**
-     * Gets the currently selected port.
-     * 
-     * @return The selected SerialPort object or null if none is selected.
-     */
-    public SerialPort getSelectedPort() {
-        return selectedPort;
-    }
-
-    /**
-     * Opens the currently selected serial port.
-     * 
-     * @return True if the port was successfully opened, otherwise false.
-     */
     private boolean openPort() {
         if (selectedPort == null) {
             System.out.println("No port selected to open.");
@@ -86,24 +87,20 @@ public class Serial {
         }
 
         if (selectedPort.openPort()) {
-            selectedPort.setComPortTimeouts(SerialPort.TIMEOUT_READ_SEMI_BLOCKING, 1000, 1000);
-            System.out.println("Port opened: " + selectedPort.getSystemPortName());
+            selectedPort.setComPortTimeouts(SerialPort.TIMEOUT_NONBLOCKING, 0, 0);
             return true;
         } else {
             return false;
         }
     }
 
-    /**
-     * Closes the currently selected serial port.
-     */
     public void closePort() {
         if (selectedPort != null && selectedPort.isOpen()) {
             selectedPort.closePort();
             System.out.println("Port closed: " + selectedPort.getSystemPortName());
         }
     }
-
+    
     /**
      * Sends a command and reads the response from the device.
      *
